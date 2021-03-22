@@ -1,6 +1,8 @@
 # OpenSeadragon
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/openseadragon/openseadragon?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Build Status](https://secure.travis-ci.org/openseadragon/openseadragon.png?branch=master)](http://travis-ci.org/openseadragon/openseadragon)
 
+**This fork adds support for opening local .dzi files using Chrome's FileSystem Access API. It is based on OpenSeaDragon v2.4.2.**
+
 An open-source, web-based viewer for zoomable images, implemented in pure JavaScript.
 
 See it in action and get started using it at [http://openseadragon.github.io/](http://openseadragon.github.io/).
