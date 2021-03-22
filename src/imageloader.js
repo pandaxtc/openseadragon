@@ -88,23 +88,28 @@ ImageJob.prototype = {
             self.finish(false);
         }, this.timeout);
 
-        if (this.filesHandle) {
+        if (this.fileHandle) {
             // when using filehandles, expect URL "<level>/<x>/<y>"
-            var params = this.src.split('/');
-            console.log("FILES DIRECTORY HANDLE");
-            console.log(this.filesHandle);
-            console.log("PROVIDED URL");
-            console.log(this.src);
+            var path = this.src.split('/');
 
-            this.filesHandle.getDirectoryHandle(params[0]).then(function (levelHandle) {
-                return levelHandle.getFileHandle(params[1] + "_" + params[2] + ".webp");
+            var filename = path.pop();
+            var pathPromise = Promise.resolve(this.fileHandle);
+
+            // resolve path within fileHandle
+            path.forEach(function (dir) {
+                pathPromise = pathPromise.then(function (dirHandle) {
+                    return dirHandle.getDirectoryHandle(dir);
+                });
+            });
+
+            pathPromise.then(function (dirHandle) {
+                return dirHandle.getFileHandle(filename);
             }).then(function (tileHandle) {
                 return tileHandle.getFile();
             }).then(function (file) {
-                    // really hope this doesn't cause memory management issues...
                 self.image.src = window.URL.createObjectURL(file);
             }).catch(function (error) {
-                self.errorMsg = "Error opening file: " + error.message;
+                self.errorMsg = "Filesystem error on path \"" + this.src + "\": " + error.message;
                 self.finish(false);
             });
         }
@@ -201,7 +206,7 @@ $.ImageLoader = function(options) {
         timeout:        $.DEFAULT_SETTINGS.timeout,
         jobQueue:       [],
         jobsInProgress: 0,
-        filesHandle:    null
+        //filesHandle:    null
     }, options);
 
 };
@@ -221,6 +226,7 @@ $.ImageLoader.prototype = {
      * requests.
      * @param {Function} [options.callback] - Called once image has been downloaded.
      * @param {Function} [options.abort] - Called when this image job is aborted.
+     * @param {Object} [options.fileHandle] - FileSystemDirectoryHandle to look up src in.
      */
     addJob: function(options) {
         var _this = this,
@@ -229,6 +235,7 @@ $.ImageLoader.prototype = {
             },
             jobOptions = {
                 src: options.src,
+                fileHandle: options.fileHandle,
                 loadWithAjax: options.loadWithAjax,
                 ajaxHeaders: options.loadWithAjax ? options.ajaxHeaders : null,
                 crossOriginPolicy: options.crossOriginPolicy,
