@@ -88,9 +88,29 @@ ImageJob.prototype = {
             self.finish(false);
         }, this.timeout);
 
+        if (this.filesHandle) {
+            // when using filehandles, expect URL "<level>/<x>/<y>"
+            var params = this.src.split('/');
+            console.log("FILES DIRECTORY HANDLE");
+            console.log(this.filesHandle);
+            console.log("PROVIDED URL");
+            console.log(this.src);
+
+            this.filesHandle.getDirectoryHandle(params[0]).then(function (levelHandle) {
+                return levelHandle.getFileHandle(params[1] + "_" + params[2] + ".webp");
+            }).then(function (tileHandle) {
+                return tileHandle.getFile();
+            }).then(function (file) {
+                    // really hope this doesn't cause memory management issues...
+                self.image.src = window.URL.createObjectURL(file);
+            }).catch(function (error) {
+                self.errorMsg = "Error opening file: " + error.message;
+                self.finish(false);
+            });
+        }
         // Load the tile with an AJAX request if the loadWithAjax option is
         // set. Otherwise load the image by setting the source proprety of the image object.
-        if (this.loadWithAjax) {
+        else if (this.loadWithAjax) {
             this.request = $.makeAjaxRequest({
                 url: this.src,
                 withCredentials: this.ajaxWithCredentials,
@@ -180,7 +200,8 @@ $.ImageLoader = function(options) {
         jobLimit:       $.DEFAULT_SETTINGS.imageLoaderLimit,
         timeout:        $.DEFAULT_SETTINGS.timeout,
         jobQueue:       [],
-        jobsInProgress: 0
+        jobsInProgress: 0,
+        filesHandle:    null
     }, options);
 
 };
@@ -214,7 +235,8 @@ $.ImageLoader.prototype = {
                 ajaxWithCredentials: options.ajaxWithCredentials,
                 callback: complete,
                 abort: options.abort,
-                timeout: this.timeout
+                timeout: this.timeout,
+                filesHandle: this.filesHandle
             },
             newJob = new ImageJob(jobOptions);
 
